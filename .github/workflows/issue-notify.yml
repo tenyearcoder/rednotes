@@ -1,0 +1,34 @@
+name: 新 Issue 微信通知
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 推送到企业微信群机器人
+        env:
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          payload=$(jq -n \
+            --arg number "$ISSUE_NUMBER" \
+            --arg title "$ISSUE_TITLE" \
+            --arg author "$ISSUE_AUTHOR" \
+            --arg url "$ISSUE_URL" \
+            '{
+              msgtype: "markdown",
+              markdown: {
+                content: ("📕 **rednotes 有新 Issue**\n> #\($number) \($title)\n> 提交者：<font color=\"comment\">\($author)</font>\n> [点此查看](\($url))")
+              }
+            }')
+          curl -sf -X POST "$WECOM_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$payload"
