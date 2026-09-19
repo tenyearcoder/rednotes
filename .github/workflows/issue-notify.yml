@@ -29,6 +29,11 @@ jobs:
                 content: ("📕 **rednotes 有新 Issue**\n> #\($number) \($title)\n> 提交者：<font color=\"comment\">\($author)</font>\n> [点此查看](\($url))")
               }
             }')
-          curl -sf -X POST "$WECOM_WEBHOOK_URL" \
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "$WECOM_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d "$payload"
+            -d "$payload")
+          echo "$response"
+          case "$response" in
+            *"HTTP_STATUS:200"*) exit 0 ;;
+            *) exit 1 ;;
+          esac
